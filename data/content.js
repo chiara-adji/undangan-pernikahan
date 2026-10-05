@@ -161,7 +161,7 @@ window.WEDDING = {
       texts: {
         dear: "Kepada Yth.", fallbackGuest: "Tamu Undangan",
         openHint: "Ketuk segel untuk membuka",
-        invite: "Bersama keluarga, kami dengan penuh sukacita mengundang Anda untuk merayakan pernikahan kami",
+        invite: "Bersama keluarga, kami dengan penuh sukacita mengundang Bapak/Ibu/Saudara/i untuk merayakan pernikahan kami",
         weddingOf: "Pernikahan",
         songsTitle: "Lagu Kami",
         countdownTitle: "Menghitung hari",
@@ -171,7 +171,7 @@ window.WEDDING = {
         galleryCaption: "Dua hati yang saling menjaga, satu doa yang terwujud, dan perjalanan satu tahun yang menjelma selamanya.",
         rsvpTitle: "Berkenan Menjadi Bagian dari Hari Bahagia Kami?",
         giftTitle: "Ungkapan Kasih",
-        giftIntro: "Doa restu dan ucapan hangat dari Anda sudah lebih dari cukup bagi kami. Bagi yang berkenan berbagi tanda kasih, dapat melalui keterangan berikut.",
+        giftIntro: "Doa restu dan ucapan hangat dari Bapak/Ibu/Saudara/i sudah lebih dari cukup bagi kami. Bagi yang berkenan berbagi tanda kasih, dapat melalui keterangan berikut.",
         registryTitle: "Daftar Hadiah", registryIntro: "",
         wishesTitle: "Ucapan & Doa",
         closing: "Kami telah menemukan kepastian dan ketenangan di dalam diri satu sama lain. Terima kasih atas ketulusan doa dan dukungan yang senantiasa mengiringi langkah kami. Merupakan suatu kehormatan dan kebahagiaan bagi kami untuk menyambut hari istimewa ini bersama Bapak/Ibu/Saudara/i sekalian."
