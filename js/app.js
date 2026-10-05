@@ -353,12 +353,12 @@
     ["events", "gift"].forEach(id => $("#" + id)?.append(Art.corner("l"), Art.corner("r")));
     all("#main .rv").forEach((el, i) => { if (instant) el.classList.add("in"); else { el.style.transitionDelay = (i % 4) * 80 + "ms"; io.observe(el); } });
     const DECO = {
-      verse: [["hummer", "p-tr w2 fly"], ["lily-pink", "p-bl w2 sway"]], couple: [["dove", "p-tr w3 float"], ["stamp-bird", "p-bl w2 rot1 float2"]],
+      verse: [["hummer", "p-tr w2 fly"], ["lily-pink", "p-bl w2 sway"]], couple: [["morpho", "p-tr w3 fly"], ["delphinium", "p-bl w3 sway"]],
       playlist: [["lace-heart", "p-tl w2 float"], ["key", "p-br w2 rot2 float2"]], countdown: [["lamp", "p-tl w2 swing"], ["lamp", "p-tr w2 swing flip"], ["lace-fan", "p-br w3 float"]],
-      story: [["lily-pink", "p-tr w3 sway"], ["script-paper", "p-bl w2 rot1 float"]], events: [["parasol", "p-tr w3 rot2 sway"], ["stamp-bird", "p-bl w2 rot2 float2"]],
+      story: [["delphinium", "p-tr w3 sway"], ["forget", "p-bl w2 sway"]], events: [["parasol", "p-tr w3 rot2 sway"], ["stamp-bird", "p-bl w2 rot2 float2"]],
       gallery: [["stamp-flower", "p-tl w2 rot1 float"], ["key", "p-br w2 rot2 float2"]], rsvp: [["env-flowers", "p-tr w3 float"], ["hummer", "p-tl w2 fly"]],
       gift: [["locket", "p-tr w1 float"], ["rings", "p-bl w2 rot1 float2"]], registry: [["parasol", "p-tr w2 rot1 sway"], ["gold-flora", "p-bl w2 rot1 float"]],
-      guide: [["tampah", "p-tr w2 rot2 float"], ["rosette", "p-bl w2 sway"]], wishes: [["dove", "p-tl w3 float"], ["lov", "p-br w2 sway"]], closing: [["lily-white", "p-bl w4 sway"], ["lily-pink", "p-br w4 sway flip"], ["bookmark", "p-tr w2 float"]]
+      guide: [["morpho", "p-tr w2 fly"], ["forget", "p-bl w2 sway"]], wishes: [["dove", "p-tl w3 float"], ["lov", "p-br w2 sway"]], closing: [["lily-white", "p-bl w4 sway"], ["lily-pink", "p-br w4 sway flip"], ["bookmark", "p-tr w2 float"]]
     };
     Object.entries(DECO).forEach(([id, l]) => { const s = $("#" + id); if (s) l.forEach(([n, c]) => s.append(Art.stick(n, "dk " + c))); });
     syncAudio();
@@ -405,7 +405,7 @@
     if (bg) addEventListener("scroll", () => { if (!tk) { tk = true; requestAnimationFrame(() => { bg.style.transform = `translateY(${Math.min(scrollY, 900) * .03}px)`; tk = false; }); } }, { passive: true });
   }
   // Open the site with ?check=1 to list any artwork file that is missing from the server
-  if (/[?&]check\b/.test(location.search)) Promise.all(["banner", "bg-damask-pale", "bg-navy", "bg-paisley", "bookmark", "butterfly", "cartouche", "dove", "elephant", "env-back", "env-flowers", "env-front", "fan-batik2", "frame-flowers2", "frame-oval", "frame-ticket", "gold-flora", "gunungan", "hummer", "janur", "joglo", "key", "lace-fan", "lace-heart", "lace-navy", "lace-trim", "lamp", "lily-bouquet", "lily-pink", "lily-white", "locket", "lov", "paper", "parasol", "rings", "roses-bg", "rosette", "script-paper", "seal", "seal-navy", "stamp-bird", "stamp-flower", "stamp-tulip", "tag", "tampah", "vinyl"].map(n => fetch("assets/art/" + n + ".webp", { method: "HEAD" }).then(r => r.ok ? null : n).catch(() => n)))
+  if (/[?&]check\b/.test(location.search)) Promise.all(["banner", "bg-damask-pale", "bg-jacquard", "bg-jacquard-tile", "bg-navy", "bg-paisley", "bookmark", "butterfly", "cartouche", "delphinium", "dove", "elephant", "env-back", "env-flowers", "env-front", "fan-batik2", "forget", "frame-flowers2", "frame-oval", "frame-ticket", "gold-flora", "gunungan", "hummer", "janur", "joglo", "key", "lace-fan", "lace-heart", "lace-navy", "lace-trim", "lamp", "lily-bouquet", "lily-pink", "lily-white", "locket", "lov", "morpho", "paper", "parasol", "rings", "roses-bg", "rosette", "seal", "seal-navy", "stamp-bird", "stamp-flower", "tag", "vinyl"].map(n => fetch("assets/art/" + n + ".webp", { method: "HEAD" }).then(r => r.ok ? null : n).catch(() => n)))
     .then(m => { m = m.filter(Boolean); const b = h("div", { style: "position:fixed;z-index:999;left:0;right:0;top:0;padding:12px;font:14px sans-serif;color:#fff;background:" + (m.length ? "#A4513F" : "#56603F") },
       m.length ? "Missing in assets/art/: " + m.join(".webp, ") + ".webp" : "All artwork files found."); document.body.append(b); });
   window.WEDDING_READY = true;

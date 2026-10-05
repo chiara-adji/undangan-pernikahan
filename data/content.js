@@ -5,7 +5,7 @@
    Anything in [SQUARE BRACKETS] is still a placeholder.
    ========================================================== */
 window.WEDDING = {
-  defaultLang: "en",                      // opens in English; guests switch to Indonesian with the EN | ID toggle (?lang=id also works)
+  defaultLang: "id",                      // opens in Indonesian; guests switch to English with the EN | ID toggle (?lang=en also works)
   couple: { a: "Chiara", b: "Adji", monogram: "C & A" },
   date: "2026-12-19T08:00:00+07:00",      // countdown target: Akad Nikah 08:00 WIB
   hero: { photo: "assets/images/hero" },
@@ -38,7 +38,7 @@ window.WEDDING = {
     ]
   },
 
-  rsvp: { endpoint: ""      /* paste the Web App URL of the SECOND Google Sheet here */, maxGuests: 4, deadline: "" },
+  rsvp: { endpoint: "https://script.google.com/macros/s/AKfycbz8kI28jUYl5F-8iY0p4vvAjoy71PueAE2VV_jjQMReUJbeJ7E5pPhwzOihWg6Y5RO-/exec", maxGuests: 4, deadline: "" },
 
   i18n: {
     /* ======================= ENGLISH ======================= */

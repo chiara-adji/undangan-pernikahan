@@ -213,7 +213,7 @@ form .btn{margin-top:32px;width:100%}
 .pol img,.pol-s img{width:100%;aspect-ratio:1;object-fit:cover;display:block;filter:saturate(.88) sepia(.1)}
 .pol-s{position:relative;display:block;width:min(230px,70%);padding:8px 8px 28px;margin-top:16px;transform:rotate(-2deg)}
 .pol-s img{aspect-ratio:4/5}
-.pol-s::before{content:"";position:absolute;top:-10px;left:50%;width:70px;height:20px;margin-left:-35px;background:rgba(203,209,188,.75);transform:rotate(-3deg)}
+.pol-s::before{content:"";position:absolute;top:-10px;left:50%;width:70px;height:20px;margin-left:-35px;background:rgba(176,191,219,.75);transform:rotate(-3deg)}
 .grid button:nth-child(n){border:8px solid #fff;border-bottom-width:28px;border-radius:0;outline:0;background:#fff;box-shadow:0 2px 8px rgba(60,50,30,.22);transform:rotate(-2deg);aspect-ratio:4/5.4}
 .grid button:nth-child(even){transform:rotate(1.8deg)}
 .rv:not(.in) .draw path{animation-play-state:paused}
@@ -262,7 +262,7 @@ h2::after{content:"";display:block;width:56px;height:1px;background:var(--sage);
 .langsw button{font:600 11.5px var(--f-disp);letter-spacing:.18em;padding:0 13px;min-height:44px;border:0;background:none;color:var(--ink-soft);cursor:pointer}
 .langsw button[aria-pressed=true]{background:var(--moss);color:var(--ivory)}
 #lang-open{position:absolute;top:calc(14px + env(safe-area-inset-top));right:16px;z-index:5}
-.opening .langsw{background:rgba(253,252,249,.08);border-color:rgba(203,209,188,.45)}
+.opening .langsw{background:rgba(253,252,249,.08);border-color:rgba(176,191,219,.45)}
 .opening .langsw button{color:var(--mist)}.opening .langsw button[aria-pressed=true]{background:var(--paper);color:var(--forest)}
 
 /* --- shared illustration parts --- */
@@ -278,15 +278,15 @@ h2::after{content:"";display:block;width:56px;height:1px;background:var(--sage);
 .art .ff{fill:var(--sage);stroke:none;animation:tw 3.2s ease-in-out infinite}.dark .art .ff{fill:var(--mist)}
 .draw .nd{stroke-dasharray:none;stroke-dashoffset:0;animation:none}
 .art .rs{fill:var(--claret);fill-opacity:.1;stroke:var(--claret)}
-.tape::after{content:"";position:absolute;top:-11px;left:50%;width:84px;height:22px;margin-left:-42px;background:rgba(203,209,188,.8);transform:rotate(-2deg);box-shadow:0 1px 2px rgba(60,50,30,.14);pointer-events:none}
+.tape::after{content:"";position:absolute;top:-11px;left:50%;width:84px;height:22px;margin-left:-42px;background:rgba(176,191,219,.8);transform:rotate(-2deg);box-shadow:0 1px 2px rgba(60,50,30,.14);pointer-events:none}
 .tape.ev:nth-of-type(even)::after{transform:rotate(2.5deg)}
 
 /* --- 1. opening: decorated envelope screen --- */
 .opening{padding:24px;overflow:hidden}
 .opening .envelope,.opening .hint{position:relative;z-index:2}
 .deco{position:absolute;inset:0;pointer-events:none;overflow:hidden}
-.deco::before,.deco::after{content:"";position:absolute;border:1px solid rgba(203,209,188,.34)}
-.deco::before{inset:14px}.deco::after{inset:21px;border-color:rgba(203,209,188,.16)}
+.deco::before,.deco::after{content:"";position:absolute;border:1px solid rgba(176,191,219,.34)}
+.deco::before{inset:14px}.deco::after{inset:21px;border-color:rgba(176,191,219,.16)}
 .deco .pj{width:clamp(110px,34vw,190px);left:14px;top:14px;opacity:.85}.deco .pj.r{left:auto;right:14px}
 .deco .fr{top:34%;width:clamp(90px,26vw,170px);opacity:.42}.deco .fr.l{left:14px}.deco .fr.r{right:14px}
 .deco .bt{width:min(440px,80vw);bottom:22px;opacity:.6}
@@ -296,7 +296,7 @@ h2::after{content:"";display:block;width:56px;height:1px;background:var(--sage);
 
 /* --- 2. hero: ornamented, no image files --- */
 .hero{position:relative;display:grid;place-items:center;min-height:100dvh;padding:96px 22px min(64vw,360px);overflow:hidden;
-  background:radial-gradient(110% 60% at 50% 0,#f6f4ee,transparent 72%),radial-gradient(90% 50% at 50% 100%,rgba(203,209,188,.55),transparent 70%),#ebe9e0}
+  background:radial-gradient(110% 60% at 50% 0,#f6f4ee,transparent 72%),radial-gradient(90% 50% at 50% 100%,rgba(176,191,219,.55),transparent 70%),#ebe9e0}
 .hero-deco{position:absolute;inset:0;pointer-events:none}
 .hero-deco .art *{stroke:var(--moss)}.hero-deco .art{opacity:.62}
 .hero-deco .pj{width:clamp(130px,38vw,230px);top:0}
@@ -347,7 +347,7 @@ body.locked .hero-deco .draw path{animation-play-state:paused}
 
 /* --- 6. the day --- */
 .way-art{width:min(380px,92vw);margin:0 auto 20px}.way-art svg{width:100%;height:auto}
-.ev.tape::after{background:rgba(203,209,188,.9)}
+.ev.tape::after{background:rgba(176,191,219,.9)}
 
 /* --- gallery canopy (replaces janur image) --- */
 .canopy{position:relative;height:150px;width:min(420px,100%);margin:0 auto -34px}
@@ -590,11 +590,16 @@ body{font-synthesis:none}
 .opening.dark{background:#14213d url(../assets/art/roses-bg.webp) center/cover}
 .opening::before{background:rgba(14,24,48,.5)}
 #verse{background:linear-gradient(rgba(247,245,239,.86),rgba(247,245,239,.86)),url(../assets/art/bg-damask-pale.webp) center/cover}
-#couple{background:#F1EFE8}
 #playlist{background:linear-gradient(rgba(247,245,239,.9),rgba(247,245,239,.9)),url(../assets/art/bg-paisley.webp) center/cover}
-#guide{background:#F2F0E9}
 .btn,.gtoggle{border-color:var(--moss)}.btn:hover{background:var(--forest)}
 .vinyl{width:min(250px,66vw)}.vinyl.spin .vinyl-img{animation:bob 3.2s ease-in-out infinite alternate}
 @keyframes bob{from{transform:translateY(0) rotate(0)}to{transform:translateY(-7px) rotate(.8deg)}}
 @media(prefers-reduced-motion:reduce){.vinyl.spin .vinyl-img{animation:none!important}}
 #verse .lace-rule{opacity:.7;width:min(230px,64%)}
+
+/* ===== v2.1: more navy-gold-blue on the quiet pages ===== */
+#couple{background:#A9BCDB url(../assets/art/bg-jacquard.webp) center/cover;background-blend-mode:multiply}
+#story,#guide{background:#D2DDEE url(../assets/art/bg-jacquard-tile.webp) 0 0/540px auto repeat;background-blend-mode:multiply}
+#gallery{background:#DCE5F2 url(../assets/art/bg-jacquard-tile.webp) 0 0/540px auto repeat;background-blend-mode:multiply}
+#couple .amp,#couple .script{color:var(--forest)}
+.gteaser,.gnote{color:var(--forest)}

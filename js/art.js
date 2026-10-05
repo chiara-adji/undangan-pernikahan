@@ -100,7 +100,7 @@ window.Art = (() => {
   const px = (n, c = "") => `<img class="sx ${c}" src="assets/art/${n}.webp" alt="" loading="lazy" decoding="async" onerror="this.style.display='none'">`;
   const stick = (n, c = "") => { const d = document.createElement("div"); d.innerHTML = px(n, c); return d.firstElementChild; };
   const N = {
-    corner: side => stick("lov", "corner " + side),
+    corner: side => stick("forget", "corner " + side),
     penjor: side => px("janur", "pj " + side),
     fronds: () => "",
     scene: () => px("joglo", "joglo-img"),
