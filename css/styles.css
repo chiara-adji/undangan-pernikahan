@@ -586,7 +586,6 @@ body{font-synthesis:none}
 .chap h3,.gsub{font-weight:400}
 
 /* ===== v2 theme: navy / white / gold (same layout as the first invitation) ===== */
-.dark{background:#16264A url(../assets/art/bg-navy.webp) center top/368px auto repeat}
 .opening.dark{background:#14213d url(../assets/art/roses-bg.webp) center/cover}
 .opening::before{background:rgba(14,24,48,.5)}
 #verse{background:linear-gradient(rgba(247,245,239,.86),rgba(247,245,239,.86)),url(../assets/art/bg-damask-pale.webp) center/cover}
@@ -603,3 +602,25 @@ body{font-synthesis:none}
 #gallery{background:#DCE5F2 url(../assets/art/bg-jacquard-tile.webp) 0 0/540px auto repeat;background-blend-mode:multiply}
 #couple .amp,#couple .script{color:var(--forest)}
 .gteaser,.gnote{color:var(--forest)}
+
+/* long guest names on the envelope */
+.e-to{bottom:11%}.e-to .script{line-height:1.1;overflow-wrap:break-word}
+
+/* the envelope picture has empty margins: keep the name inside the paper */
+.e-to{left:15%;right:15%}
+
+/* ===== v2.2: brighter blue instead of very dark navy ===== */
+.dark,.player,.reply-wrap{background:linear-gradient(rgba(22,38,74,.32),rgba(22,38,74,.32)),url(../assets/art/bg-blue.webp) center/cover #36517F}
+.dark .meta,.dark .cap,.dark .eyebrow,.dark .np-in i,.player .np-in i,.player .tm{color:#F4F7FC}
+.opening::before{background:rgba(14,24,48,.3)}.opening .hint{color:#fff}
+
+/* ===== v2.3: readability pass (measured text-vs-background contrast) ===== */
+.dark,.player,.reply-wrap{background:linear-gradient(rgba(22,38,74,.40),rgba(22,38,74,.40)),url(../assets/art/bg-blue.webp) center/cover #36517F}
+.side.dark{background:linear-gradient(rgba(22,38,74,.30),rgba(22,38,74,.30)),url(../assets/art/bg-blue.webp) center/cover #4B6A9E}
+.count span{color:#F4F7FC;font-size:11.5px}
+.closing .addr,.closing .pn,.closing .quote,.closing .meta,.closing .eyebrow,.closing .cap{color:#fff}
+#closing.sec{padding-bottom:300px}
+.opening .hint{background:rgba(14,24,48,.5);padding:8px 18px;border-radius:999px;color:#fff}
+
+.reply .name.no-mk{grid-template-columns:1fr}
+.reply .name{margin-bottom:-6px}
