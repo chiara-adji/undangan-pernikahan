@@ -111,5 +111,6 @@ window.Art = (() => {
     backdrop: () => px("lily-white", "dk d1 float") + px("lily-pink", "dk d2 float2") + px("hummer", "dk d3 fly") + px("dove", "dk d4 float2"),
     heroDeco: () => px("janur", "pj l") + px("janur", "pj r") + px("lily-white", "dk d1 float") + px("lily-pink", "dk d2 float2") + px("hummer", "dk d3 fly") + `<div class="bt">${px("joglo", "joglo-img")}</div>`
   };
-  return { ...{ scene, way, archScene, corner, divider, lace, vinyl, vine, penjor, fronds, backdrop, heroDeco }, ...N, stick, px, holes: {"frame-flowers2": {"l": 21.7, "t": 23.8, "w": 55.3, "h": 56.2, "ar": 0.7266}, "frame-oval": {"l": 20.1, "t": 15.6, "w": 61.0, "h": 70.3, "ar": 0.7859}} };
+  /* Only the artwork images are exported: the old line-drawn janur, palm fronds and joglo scenes are not used anywhere */
+  return { divider, lace, ...N, stick, px, version: 16, holes: {"frame-flowers2": {"l": 21.7, "t": 23.8, "w": 55.3, "h": 56.2, "ar": 0.7266}, "frame-oval": {"l": 20.1, "t": 15.6, "w": 61.0, "h": 70.3, "ar": 0.7859}} };
 })();

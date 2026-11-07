@@ -14,6 +14,19 @@
   };
   let lang = pickLang(), D = W.i18n[lang], T = D.texts, U = D.ui;
 
+  /* ---------- Gallery order: different for every guest ---------- */
+  // Shuffle each prewedding concept separately, then alternate them so both concepts are always mixed.
+  // The same new order is applied to every language's galleryAlts so captions stay matched.
+  if (W.galleryShuffle && W.gallery.length > 1) {
+    const mix = a => { for (let i = a.length - 1; i > 0; i--) { const j = Math.floor(Math.random() * (i + 1)); [a[i], a[j]] = [a[j], a[i]]; } return a; };
+    // spread each concept evenly through the list (e.g. 5 formal among 9 casual), with a random offset per guest
+    const groups = {}; W.gallery.forEach((p, i) => (groups[p.concept || "all"] ||= []).push(i));
+    const order = Object.values(groups).flatMap(g => { const off = Math.random(); return mix(g).map((i, k) => [(k + off) / g.length, i]); })
+      .sort((x, y) => x[0] - y[0]).map(x => x[1]);
+    W.gallery = order.map(i => W.gallery[i]);
+    Object.values(W.i18n).forEach(L => { if (Array.isArray(L.galleryAlts)) { const o = L.galleryAlts; L.galleryAlts = order.map(i => o[i]); } });
+  }
+
   /* ---------- Helpers ---------- */
   // Safe DOM builder: text always goes through textContent (no HTML injection)
   function h(tag, attrs = {}, ...kids) {
@@ -57,6 +70,10 @@
     } catch (e) { /* keep the stored measurements */ } };
     img.complete && img.naturalWidth ? fit() : img.addEventListener("load", fit);
     box.append(pb, img); return box; };
+  // Simple storybook photo frame: paper mat, double rule and photo corners. The photo keeps its own shape, so nothing is cropped.
+  const book = (ph, cls = "") => h("figure", { class: "sbook " + cls }, h("div", { class: "sb-in" }, ph, ["k1", "k2", "k3", "k4"].map(c => h("i", { class: "sb-c " + c, "aria-hidden": "true" }))));
+  Art.holes["fr-lace-oval"] = { l: 26.1, t: 20.6, w: 47.4, h: 58.1, ar: 0.7175 };
+  const artImg = (n, cls = "") => h("img", { class: cls, src: "assets/art/" + n + ".webp", alt: "", "aria-hidden": "true", decoding: "async" });
   const rule = () => { const d = h("div", { class: "divider rv" }); d.innerHTML = Art.divider(); return d; };
   const head = (eyebrow, whisper, title) => [
     h("p", { class: "eyebrow rv", text: eyebrow }),
@@ -73,22 +90,7 @@
   }
 
   /* ---------- Personalization: ?to=Dr.%20Rina ---------- */
-  // Long guest names: shrink the name on the envelope until it fits (then wrap onto two lines)
-  function fitGuest() {
-    const el = $("#open-guest"), box = $(".e-to"); if (!el || !box || !box.clientWidth) return;
-    const textW = () => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().width; };   // real text width, even when it overflows a centred box
-    const max = box.clientWidth - 2;
-    el.style.fontSize = ""; el.style.whiteSpace = "nowrap";
-    let size = parseFloat(getComputedStyle(el).fontSize);
-    while (textW() > max && size > 20) { size -= 1; el.style.fontSize = size + "px"; }
-    if (textW() > max) {
-      el.style.whiteSpace = "normal"; size = 22; el.style.fontSize = size + "px";
-      const sealBottom = () => $("#seal").getBoundingClientRect().bottom, textTop = () => { const r = document.createRange(); r.selectNodeContents(el); return r.getBoundingClientRect().top; };
-      while ((textW() > max || textTop() < sealBottom() || el.scrollHeight > size * 2.7) && size > 12) { size -= 1; el.style.fontSize = size + "px"; }
-    }
-  }
-
-  const guest = (new URLSearchParams(location.search).get("to") || "").replace(/[\u0000-\u001f\u007f<>"'`\\{}]/g, "").replace(/\s+/g, " ").trim().slice(0, 60);
+  const guest = (new URLSearchParams(location.search).get("to") || "").replace(/[\u0000-\u001f\u007f<>"'`\\{}]/g, "").replace(/\s+/g, " ").trim().slice(0, 90);
 
   /* ---------- Music engine (lives outside the DOM so switching language never interrupts it) ---------- */
   const tracks = (() => {
@@ -149,23 +151,36 @@
   }
 
   function Couple() {
-    const card = p => h("div", { class: "card person tape rv" },
+    const P = W.profiles || {};
+    const card = (p, src) => h("div", { class: "card person tape rv" },
+      src ? framed("fr-lace-oval", photo(src, p.name), "pf-frm lace-pf") : null,
       h("h3", { class: "pname", text: p.name }), h("p", { class: "cap rel", text: p.rel }),
       h("p", { class: "parents" }, p.parents[0], h("br"), "& " + p.parents[1]),
       h("p", { class: "addr", text: p.address }));
     const s = section("couple", "couple", h("p", { id: "couple-t", class: "script rv", text: T.weddingOf }),
-      h("div", { class: "people" }, card(D.bride), h("p", { class: "amp rv", "aria-hidden": "true", text: "&" }), card(D.groom)));
+      h("div", { class: "people" }, card(D.bride, P.bride), h("p", { class: "amp rv", "aria-hidden": "true", text: "&" }), card(D.groom, P.groom)));
     s.append(Art.corner("l"), Art.corner("r")); return s;
   }
 
-  let cdTimer = null;
+  let cdTimer = null, slideTimer = null;
+  // Counting the days: a scrapbook stack (lace envelope, slowly changing polaroid, stamp, date tag, lily) and a paper countdown card
   function Countdown() {
-    const s = section("countdown", "dark", ...head(T.countdownTitle, "", ""));
-    const box = h("div", { class: "count rv", role: "timer", "aria-label": U.timer });
+    const s = section("countdown", "dark cdx", h("p", { class: "eyebrow rv", text: T.countdownEyebrow }), h("h2", { id: "countdown-t", class: "rv", text: T.countdownTitle }));
+    const pics = W.gallery.map((p, i) => ({ src: p.src, alt: D.galleryAlts[W.gallery.indexOf(p)] || "" })).sort(() => Math.random() - .5);
+    const show = h("div", { class: "show" });
+    const imgs = pics.map((p, i) => h("img", { alt: p.alt, decoding: "async", "data-src": p.src }));
+    const load = i => { const im = imgs[i % imgs.length]; if (!im.src) im.src = im.dataset.src; };
+    imgs.forEach(im => show.append(im)); load(0); load(1); if (imgs[0]) imgs[0].classList.add("on");
+    let k = 0;
+    if (imgs.length > 1) slideTimer = setInterval(() => { if (document.hidden) return;
+      imgs[k].classList.remove("on"); k = (k + 1) % imgs.length; imgs[k].classList.add("on"); load(k + 1); }, 4200);
+    const scrap = h("div", { class: "scrap rv", "aria-hidden": "true" },
+      artImg("doily-oval", "s-doily"), artImg("env-lace-back", "s-eb"),
+      h("div", { class: "s-card" }, show), artImg("env-lace-front", "s-ef"), artImg("seal", "s-seal"), artImg("stamp-bird", "s-stamp"),
+      h("div", { class: "s-tag", text: W.date.slice(8, 10) + " · " + W.date.slice(5, 7) + " · " + W.date.slice(0, 4) }), artImg("lily-white", "s-lily"));
+    const box = h("div", { class: "count", role: "timer", "aria-label": U.timer });
     const cells = U.units.map(l => { const b = h("b", { text: "0" }); box.append(h("div", {}, b, h("span", { text: l }))); return b; });
-    const frame = framed("frame-flowers2", photo(W.hero.photo, D.heroAlt), "cd-frm rv");
-    $(".wrap", s).append(frame, quote(D.quotes.hero), box);
-    $(".eyebrow", s).id = "countdown-t";
+    $(".wrap", s).append(scrap, h("div", { class: "paper-count rv" }, h("p", { class: "eyebrow", text: T.countdownPaper }), box), quote(D.quotes.hero));
     const target = new Date(W.date).getTime();
     const tick = () => {
       let d = Math.max(0, target - Date.now()) / 1000;
@@ -175,16 +190,42 @@
     return s;
   }
 
+  // Our love story: a closed storybook that opens on tap; pages turn with a flip
+  let bookOpen = false, bookPage = 0;
   function Story() {
-    const roman = ["I", "II", "III", "IV", "V", "VI"];
-    const chaps = h("div", { class: "chaps" }, D.story.map((c, i) => { const base = W.story[i] || {};
-      return h("article", { class: "card chap rv" },
-        h("span", { class: "num", "aria-hidden": "true", text: roman[i] || String(i + 1) }),
-        c.date ? h("p", { class: "meta", text: c.date }) : null, h("h3", { text: c.title }),
-        base.photo ? h("figure", { class: "pol-s chap-ph" }, photo(base.photo, c.title)) : null,
-        h("p", { class: "dc", text: c.text }), Art.corner("l"), Art.corner("r"), Art.stick(["hummer", "dove", "rings"][i % 3], "dk p-tr w2 float")); }));
-    const s = section("story", "", framed("frame-oval", photo(W.gallery[0].src, D.galleryAlts[0]), "story-frm rv"), ...head("", "", T.storyTitle), chaps, quote(D.quotes.story));
-    $("h2", s).id = "story-t"; return s;
+    const B = T.book, roman = ["I", "II", "III", "IV", "V", "VI"];
+    const FR = [["fr-gold", [18, 12, 63.5, 74.9]], ["fr-wood", [12.2, 9.1, 75.8, 81.8]]];
+    const framePic = (src, alt, [name, [l, t, w, hh]]) => h("div", { class: "bk-fr" },
+      h("div", { class: "bk-ph", style: `left:${l - 1}%;top:${t - 1}%;width:${w + 2}%;height:${hh + 2}%` }, photo(src, alt)), artImg(name, "bk-fi"));
+    const pols = (a, b, alt) => h("div", { class: "bk-pols" }, h("div", { class: "bk-pol a" }, photo(a, alt)), h("div", { class: "bk-pol b" }, photo(b, alt)), artImg("lov", "bk-lov"));
+    const page = (...kids) => h("article", { class: "page" }, h("div", { class: "pf" }, ...kids), h("div", { class: "pb", "aria-hidden": "true" }));
+    const pages = D.story.map((c, i) => { const ph = (W.story[i] || {}).photo;
+      const pic = !ph ? null : i < FR.length ? framePic(ph, c.title, FR[i]) : pols(W.hero.photo, ph, c.title);
+      return page(h("p", { class: "bk-num", text: B.chapter + " " + (roman[i] || i + 1) }), h("h3", { class: "bk-t", text: c.title }), pic, h("p", { class: "bk-p", text: c.text })); });
+    const E = B.epi, orn = () => h("span", { class: "bk-orn", "aria-hidden": "true" }, h("i"), "❦", h("i"));
+    pages.push(page(h("div", { class: "bk-epi" }, h("p", { class: "bk-num", text: B.epilogue }), orn(),
+      ...E.lines.map(t => h("p", { class: "q1", text: t })), h("p", { class: "q2", text: E.accent }), h("p", { class: "q1", text: E.end }), orn(),
+      h("p", { class: "fin", text: "— " + B.ending + " —" }), artImg("lov", "bk-lov2"))));
+    pages[pages.length - 1].classList.add("epi");
+    pages.forEach((p, i) => p.style.zIndex = pages.length - i);
+    const cover = h("button", { type: "button", class: "bk-cover", "aria-label": B.open },
+      h("div", { class: "face" }, artImg("book-cover"), h("div", { class: "bk-ct" }, h("small", { text: B.of }),
+        h("strong", {}, W.couple.a, h("i", { text: "&" }), W.couple.b), artImg("lov"))), h("i", { class: "ribbon" }));
+    const bk = h("div", { class: "book" + (bookOpen ? " open still" : "") }, cover, h("div", { class: "pages" }, pages));
+    const pg = h("span", { class: "bk-pg" }), prev = h("button", { type: "button", class: "bk-btn" }), next = h("button", { type: "button", class: "bk-btn", text: B.next + " ›" });
+    const nav = h("div", { class: "bk-nav" }, prev, pg, next), tap = h("p", { class: "bk-tap", text: "✦ " + B.tap + " ✦" });
+    const paint = () => { pages.forEach((p, i) => { p.classList.toggle("turned", i < bookPage); p.inert = i !== bookPage; });
+      pg.textContent = (bookPage + 1) + " / " + pages.length; prev.textContent = "‹ " + (bookPage ? B.back : B.close); next.disabled = bookPage === pages.length - 1;
+      s.classList.toggle("bk-open", bookOpen); cover.inert = bookOpen; };
+    cover.onclick = () => { bookOpen = true; bookPage = 0; bk.classList.remove("still"); bk.classList.add("open"); paint(); setTimeout(() => next.focus({ preventScroll: true }), 900); };
+    next.onclick = () => { if (bookPage < pages.length - 1) { bookPage++; paint(); } };
+    prev.onclick = () => { if (bookPage) { bookPage--; paint(); return; }
+      bookOpen = false; bk.classList.remove("open"); paint(); bk.scrollIntoView({ behavior: reduced ? "auto" : "smooth", block: "center" }); cover.focus({ preventScroll: true }); };
+    let x0 = 0; bk.addEventListener("touchstart", e => x0 = e.touches[0].clientX, { passive: true });
+    bk.addEventListener("touchend", e => { if (!bookOpen) return; const dx = e.changedTouches[0].clientX - x0; if (Math.abs(dx) > 60) (dx < 0 ? next : prev).click(); });
+    const s = section("story", "storybook", h("h2", { id: "story-t", class: "rv", text: T.storyTitle }), h("p", { class: "eyebrow rv", text: T.storyEyebrow }),
+      h("div", { class: "rv" }, bk), tap, nav);
+    paint(); return s;
   }
 
   function Events() {
@@ -200,11 +241,27 @@
   }
 
   function Gallery() {
-    const grid = h("div", { class: "grid rv" }, W.gallery.map((p, i) => { const alt = D.galleryAlts[i] || "";
-      return h("button", { type: "button", "aria-label": U.openPhoto + alt, onclick: () => LB.open(i) },
-        p.src ? photo(p.src, alt, p) : h("div", { class: "ph", text: alt })); }));
-    const s = section("gallery", "", art("canopy", Art.px("lily-bouquet", "cb l sway") + Art.px("lily-bouquet", "cb r sway")), ...head("", "", T.galleryTitle), grid, T.galleryCaption ? h("p", { class: "quote rv", text: T.galleryCaption }) : null);
-    $("h2", s).id = "gallery-t"; return s;
+    const n = W.gallery.length;
+    const track = h("div", { class: "sl-track", tabindex: "0", role: "region", "aria-roledescription": "carousel", "aria-label": T.galleryTitle },
+      W.gallery.map((p, i) => { const alt = D.galleryAlts[i] || "";
+        return h("button", { type: "button", class: "sl", "data-n": String(i + 1).padStart(2, "0"), "aria-label": U.openPhoto + alt, onclick: () => LB.open(i) },
+          p.src ? photo(p.src, alt, p) : h("div", { class: "ph", text: alt })); }));
+    const count = h("p", { class: "sl-count meta", "aria-live": "polite", text: "1 / " + n });
+    const dots = h("div", { class: "sl-dots", "aria-hidden": "true" }, W.gallery.map(() => h("i")));
+    const cur = () => { const m = track.scrollLeft + track.clientWidth / 2; let b = 0, d = 1e9;
+      [...track.children].forEach((c, i) => { const x = Math.abs(c.offsetLeft + c.offsetWidth / 2 - m); if (x < d) { d = x; b = i; } }); return b; };
+    const go = i => { const c = track.children[(i + n) % n]; track.scrollTo({ left: c.offsetLeft - (track.clientWidth - c.offsetWidth) / 2, behavior: reduced ? "auto" : "smooth" }); };
+    const mark = () => { const i = cur(); count.textContent = (i + 1) + " / " + n; [...dots.children].forEach((d, k) => d.classList.toggle("on", k === i)); };
+    let t = 0; track.addEventListener("scroll", () => { cancelAnimationFrame(t); t = requestAnimationFrame(mark); }, { passive: true });
+    track.addEventListener("keydown", e => { if (e.key === "ArrowLeft") { e.preventDefault(); go(cur() - 1); } if (e.key === "ArrowRight") { e.preventDefault(); go(cur() + 1); } });
+    const nav = (cls, d, lbl, txt) => h("button", { type: "button", class: "sl-nav " + cls, "aria-label": lbl, text: txt, onclick: () => go(cur() + d) });
+    const slider = h("div", { class: "slider rv" }, track, nav("prev", -1, U.prevPhoto, "‹"), nav("next", 1, U.nextPhoto, "›"));
+    const s = section("gallery", "", art("canopy", Art.px("lily-bouquet", "cb l sway") + Art.px("lily-bouquet", "cb r sway")), h("h2", { id: "gallery-t", class: "rv", text: T.galleryTitle }), h("p", { class: "eyebrow rv", text: T.galleryEyebrow }), slider,
+      h("div", { class: "sl-foot rv" }, dots, count, h("p", { class: "swipe", "aria-hidden": "true", text: "← " + T.swipe + " →" })), T.galleryCaption ? h("p", { class: "quote rv", text: T.galleryCaption }) : null);
+    // While photos are still loading their sizes change; keep the first photo in view until the guest starts browsing
+    let touched = false; ["pointerdown", "keydown", "wheel", "touchstart"].forEach(ev => slider.addEventListener(ev, () => touched = true, { passive: true }));
+    track.querySelectorAll("img").forEach(im => im.addEventListener("load", () => { if (!touched) { track.scrollLeft = 0; mark(); } }));
+    requestAnimationFrame(mark); return s;
   }
 
   const LB = (() => {
@@ -257,7 +314,7 @@
       h("p", { class: "script", text: U.rsvpScript }),
       R.deadline ? h("p", { class: "cap", text: U.respondBy + R.deadline }) : null,
       h("div", { class: "row name" + (U.nameMark ? "" : " no-mk") }, U.nameMark ? h("label", { for: "r-name", class: "mk", text: U.nameMark }) : null,
-        h("input", { id: "r-name", name: "name", type: "text", required: "", maxlength: "60", autocomplete: "name", "aria-label": U.nameCap, value: guest })),
+        h("input", { id: "r-name", name: "name", type: "text", required: "", maxlength: "90", autocomplete: "name", value: guest, "aria-label": U.nameMark ? null : U.nameCap }), h("span", { class: "cap", text: U.nameCap })),
       h("div", { class: "row" }, tick("radio", "attendance", "yes", U.yes), tick("radio", "attendance", "no", U.no)),
       count,
       h("div", { class: "row note" }, h("label", { for: "r-m", class: "script sm", text: U.words }), h("textarea", { id: "r-m", name: "message", maxlength: "400" })),
@@ -288,30 +345,8 @@
       } catch { msg.textContent = U.errSend; msg.classList.add("err"); btn.disabled = false; }
     });
     const body = rsvpDone ? h("p", { class: "thanks", text: U.thanks + rsvpDone }) : f;
-    const s = section("rsvp", "", ...head(W.rsvp.deadline, "", T.rsvpTitle), h("div", { class: "reply-wrap rv" }, h("div", { class: "reply-card" }, body, art("vine-wrap", Art.vine())), Art.stick("seal-navy", "rseal")));
+    const s = section("rsvp", "", ...head(W.rsvp.deadline, "", T.rsvpTitle), h("div", { class: "reply-wrap rv" }, h("div", { class: "reply-card" }, body, art("vine-wrap", Art.vine())), Art.stick("seal", "rseal")));
     $("h2", s).id = "rsvp-t"; return s;
-  }
-
-  function Gift() {
-    const g = W.gifts, G = D.gifts, cards = [];
-    const copyCard = (title, line1, line2, val) => h("div", { class: "card rv" }, h("p", { class: "meta", text: title }),
-      h("p", { class: "acct", text: line1 }), h("p", { class: "cap", text: line2 }), h("button", { class: "link", type: "button", onclick: () => copy(val), text: U.copyNum }));
-    g.banks.forEach(b => cards.push(copyCard(b.bank, b.number, b.name, b.number)));
-    g.ewallets.forEach(w => cards.push(copyCard(w.name, w.number, w.holder, w.number)));
-    if (g.qr) cards.push(h("div", { class: "card rv" }, h("p", { class: "meta", text: U.qr }),
-      g.qr.src ? h("img", { class: "qr", src: g.qr.src, alt: g.qr.alt, loading: "lazy" }) : h("div", { class: "qr ph", text: U.qrPh }), h("p", { class: "cap", text: g.qr.caption })));
-    if (G.addressText) cards.push(h("div", { class: "card rv" }, h("p", { class: "meta", text: U.sendGift }),
-      h("p", { text: G.addressLabel }), h("p", { class: "cap", text: G.addressText }), h("button", { class: "link", type: "button", onclick: () => copy(G.addressText), text: U.copyAddr })));
-    const s = section("gift", "dark", ...head("", "", T.giftTitle), h("div", { class: "letter-r rv" }, h("div", { class: "lp" }, h("p", { text: T.giftIntro })), Art.stick("seal", "seal-s")), h("div", { class: "cards" }, cards));
-    $("h2", s).id = "gift-t"; return s;
-  }
-
-  function Registry() {
-    const items = W.registry.map((r, i) => { const t = D.registry[i] || {};
-      return h("div", { class: "card rv" }, h("h3", { text: t.name }), t.note && h("p", { class: "cap", text: t.note }),
-        r.url ? h("a", { class: "btn ghost", href: r.url, target: "_blank", rel: "noopener noreferrer", text: U.wishBtn }) : h("p", { class: "cap", text: U.linkSoon })); });
-    const s = section("registry", "", ...head("", "", T.registryTitle), h("p", { class: "rv", text: T.registryIntro }), h("div", { class: "cards" }, items));
-    $("h2", s).id = "registry-t"; return s;
   }
 
   let guideOpen = false;
@@ -319,9 +354,16 @@
     const C = D.guide, mapq = p => p.url || "https://www.google.com/maps/search/?api=1&query=" + encodeURIComponent(/cepu/i.test(p.name) ? p.name : p.name + " Cepu");
     const place = p => h("div", { class: "card gplace rv" }, h("h3", { text: p.name }), h("p", { text: p.text }),
       p.extra ? h("p", { class: "gextra", text: p.extra }) : null, h("a", { class: "link gmap", href: mapq(p), target: "_blank", rel: "noopener", text: U.openMap }));
-    const ticket = r => h("div", { class: "card ticket rv" }, h("p", { class: "meta", text: r.from }), h("h3", { text: r.train }),
-      h("div", { class: "tk" }, h("div", {}, h("small", { text: U.dep }), h("b", { text: r.dep })), h("span", { class: "arr", "aria-hidden": "true", text: "→" }),
-        h("div", {}, h("small", { text: U.arr }), h("b", { text: r.arr }))), r.note ? h("p", { class: "cap", text: r.note }) : null);
+    // Train tickets: vintage ticket artwork, details in the main part, destination on the stub, note underneath
+    const ticket = r => h("div", { class: "tix rv" },
+      h("div", { class: "tix-t" }, artImg("ticket", "tix-bg"),
+        h("div", { class: "tix-main" }, h("p", { class: "tix-from", text: r.from }), h("h3", { class: "tix-name", text: r.train }),
+          h("div", { class: "tix-tm" }, h("div", {}, h("small", { text: U.dep }), h("b", { text: r.dep.replace(/\s*WIB/i, "") })),
+            h("span", { class: "tix-arr", "aria-hidden": "true", text: "→" }),
+            h("div", {}, h("small", { text: U.arr }), h("b", { text: r.arr.replace(/\s*WIB/i, "") }))),
+          h("p", { class: "tix-wib", text: "WIB" })),
+        h("div", { class: "tix-stub", "aria-hidden": "true" }, h("span", { text: "Cepu" }))),
+      r.note ? h("p", { class: "tix-note", text: r.note }) : null);
     const grp = (title, ...kids) => h("div", { class: "ggroup" }, h("p", { class: "eyebrow", text: title }), ...kids);
     const ttl = h("div", { class: "gtitle rv" }, Art.stick("banner"), h("h2", { id: "guide-t", text: C.title }));
     const mk = cls => h("button", { type: "button", class: "btn ghost gtoggle " + cls, "aria-expanded": String(guideOpen), "aria-controls": "guide-body" });
@@ -354,39 +396,52 @@
     const fam = (label, p) => h("div", { class: "fam rv" }, h("p", { class: "eyebrow", text: label }),
       h("p", { class: "pn", text: p.parents[0] }), h("p", { class: "pn", text: "& " + p.parents[1] }), h("p", { class: "addr", text: p.address }));
     return h("section", { id: "closing", class: "sec dark closing", "aria-labelledby": "closing-t" }, h("div", { class: "wrap" },
-      rule(), h("div", { class: "cl-msg rv" }, Art.stick("lace-trim", "lt"), h("p", { id: "closing-t", class: "msg-c", text: T.closing }), Art.stick("lace-trim", "lt b")), quote(D.quotes.close),
+      h("div", { class: "cl-msg rv" }, Art.stick("lace-trim", "lt"), h("p", { id: "closing-t", class: "msg-c", text: T.closing }), Art.stick("lace-trim", "lt b")), quote(D.quotes.close),
       h("p", { class: "script joy rv", text: U.joy }),
       fam(U.brideLbl, D.bride), h("p", { class: "fam-sep rv", "aria-hidden": "true", text: "&" }), fam(U.groomLbl, D.groom),
-      art("scene-c rv", Art.px("elephant")), h("p", { class: "meta rv", text: D.dateLabel })));
+      art("scene-c rv", Art.px("elephant"))), h("p", { class: "cl-date", text: D.dateLabel }));
   }
+
+  // Small credit line at the very end of the invitation
+  const Credit = () => T.madeBy ? h("footer", { class: "credit" }, h("p", { class: "script sm", text: W.couple.monogram }), h("p", { text: T.madeBy })) : null;
 
   /* ---------- Page assembly ---------- */
   const io = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { e.target.classList.add("in"); io.unobserve(e.target); } }), { threshold: .15 });
   function render(st, instant) {
-    clearInterval(cdTimer);
-    $("#main").replaceChildren(Hero(), Verse(), Couple(), Playlist(), Countdown(), Story(), Events(), Gallery(), Rsvp(st), Wishes(), CityGuide(), Closing());
-    ["events", "gift"].forEach(id => $("#" + id)?.append(Art.corner("l"), Art.corner("r")));
+    clearInterval(cdTimer); clearInterval(slideTimer);
+    $("#main").replaceChildren(Hero(), Verse(), Couple(), Playlist(), Countdown(), Story(), Events(), Gallery(), Rsvp(st), Wishes(), CityGuide(), Closing(), Credit());
+    $("#events").append(Art.corner("l"), Art.corner("r"));
     all("#main .rv").forEach((el, i) => { if (instant) el.classList.add("in"); else { el.style.transitionDelay = (i % 4) * 80 + "ms"; io.observe(el); } });
     const DECO = {
+      // navy & blue keepsakes for this version (same placement as the first invitation)
       verse: [["hummer", "p-tr w2 fly"], ["lily-pink", "p-bl w2 sway"]], couple: [["morpho", "p-tr w3 fly"], ["delphinium", "p-bl w3 sway"]],
-      playlist: [["lace-heart", "p-tl w2 float"], ["key", "p-br w2 rot2 float2"]], countdown: [["lamp", "p-tl w2 swing"], ["lamp", "p-tr w2 swing flip"], ["lace-fan", "p-br w3 float"]],
+      playlist: [["lace-heart", "p-tl w2 float"], ["key", "p-br w2 rot2 float2"]], countdown: [["lamp", "p-tl w2 swing"], ["lamp", "p-tr w2 swing flip"]],
       story: [["delphinium", "p-tr w3 sway"], ["forget", "p-bl w2 sway"]], events: [["parasol", "p-tr w3 rot2 sway"], ["stamp-bird", "p-bl w2 rot2 float2"]],
       gallery: [["stamp-flower", "p-tl w2 rot1 float"], ["key", "p-br w2 rot2 float2"]], rsvp: [["env-flowers", "p-tr w3 float"], ["hummer", "p-tl w2 fly"]],
-      gift: [["locket", "p-tr w1 float"], ["rings", "p-bl w2 rot1 float2"]], registry: [["parasol", "p-tr w2 rot1 sway"], ["gold-flora", "p-bl w2 rot1 float"]],
-      guide: [["morpho", "p-tr w2 fly"], ["forget", "p-bl w2 sway"]], wishes: [["dove", "p-tl w3 float"], ["lov", "p-br w2 sway"]], closing: [["lily-white", "p-bl w3 sway"], ["lily-pink", "p-br w3 sway flip"], ["bookmark", "p-tr w2 float"]]
+      guide: [["morpho", "p-tr w2 fly"], ["forget", "p-bl w2 sway"]], wishes: [["dove", "p-tl w3 float"], ["lov", "p-br w2 sway"]], closing: [["lily-white", "p-bl w4 sway"], ["lily-pink", "p-br w4 sway flip"], ["bookmark", "p-tr w3 float"]]
     };
     Object.entries(DECO).forEach(([id, l]) => { const s = $("#" + id); if (s) l.forEach(([n, c]) => s.append(Art.stick(n, "dk " + c))); });
     syncAudio();
   }
 
   /* ---------- Chrome: language switch, opening envelope, side panel ---------- */
+  // Envelope address: long names wrap and shrink so they always stay inside the space below the seal
+  function fitGuest() {
+    const box = $(".e-to"), n = $("#open-guest"); if (!box || !n) return;
+    const used = () => [...box.children].reduce((t, c) => t + c.offsetHeight, 0) + 2;
+    n.style.fontSize = ""; let fs = parseFloat(getComputedStyle(n).fontSize);
+    while (fs > 12 && used() > box.clientHeight) { fs -= 0.5; n.style.fontSize = fs + "px"; }
+  }
+  addEventListener("resize", fitGuest);
+  if (document.fonts) document.fonts.ready.then(fitGuest);
+
   const langSwitch = () => h("div", { class: "langsw", role: "group", "aria-label": "Language / Bahasa" },
     Object.keys(W.i18n).map(k => h("button", { type: "button", "data-l": k, text: k.toUpperCase(), onclick: () => setLang(k) })));
 
   function applyChrome() {
     document.documentElement.lang = lang; document.title = D.seoTitle;
     $("#open-wo").textContent = T.weddingOf; $("#open-invite").textContent = W.couple.a + " & " + W.couple.b;
-    $("#open-to").textContent = T.dear; $("#open-guest").textContent = guest || T.fallbackGuest; fitGuest(); document.fonts && document.fonts.ready.then(fitGuest);
+    $("#open-to").textContent = T.dear; $("#open-guest").textContent = guest || T.fallbackGuest; fitGuest();
     $("#open-hint").textContent = T.openHint; $("#open-date").textContent = W.date.slice(8, 10) + " · " + W.date.slice(5, 7) + " · " + W.date.slice(0, 4); $("#seal-mono").textContent = W.couple.monogram;
     $("#seal").setAttribute("aria-label", U.openInvite); $(".skip").textContent = U.skip;
     all(".langsw button").forEach(b => { const on = b.dataset.l === lang; b.setAttribute("aria-pressed", on); if (on) b.setAttribute("aria-current", "true"); else b.removeAttribute("aria-current"); });
@@ -402,27 +457,35 @@
     applyChrome(); render(st, true); scrollTo({ top: y, behavior: "instant" });
   }
 
-  $("#deco").innerHTML = Art.backdrop();
-  $("#lang-open").append(langSwitch()); $("#lang-top").replaceWith(langSwitch());
-  applyChrome();
-  render(null, false);
-
-  const music = $("#music"); music.hidden = false; music.onclick = toggle;
+  // The seal is wired up first, so the invitation always opens even if a later step fails
   $("#seal").addEventListener("click", () => {
     $("#envelope").classList.add("opened"); $("#seal").disabled = true;
     if (audio) { play(); setTimeout(() => { if (audio.paused || audio.readyState < 3) toast(U.musicLoading); }, 3500); } // starts from a tap, so browsers allow it
     setTimeout(() => { $("#opening").classList.add("gone"); document.body.classList.remove("locked"); scrollTo(0, 0); }, reduced ? 200 : 1900);
     setTimeout(() => $("#opening").setAttribute("hidden", ""), reduced ? 700 : 2900);
   });
+  const music = $("#music"); music.hidden = false; music.onclick = toggle;
+
+  // js/art.js must be the matching version (artwork from assets/art/, no line-drawn janur)
+  if (!window.Art || Art.version !== 16) {
+    const b = h("div", { style: "position:fixed;z-index:999;left:0;right:0;top:0;padding:12px;font:14px sans-serif;color:#fff;background:#A4513F",
+      text: "js/art.js is an old version. Replace it with the art.js from this update." });
+    document.body.append(b);
+  }
+  const safe = (fn, label) => { try { fn(); } catch (e) { console.error(label, e); } };
+  safe(() => { $("#deco").innerHTML = Art.backdrop(); }, "backdrop");
+  safe(() => { $("#lang-open").append(langSwitch()); $("#lang-top").replaceWith(langSwitch()); }, "language switch");
+  safe(applyChrome, "envelope text");
+  safe(() => render(null, false), "page");
+
 
   if (!reduced) {
     const bg = $("[data-parallax]"); let tk = false;
     if (bg) addEventListener("scroll", () => { if (!tk) { tk = true; requestAnimationFrame(() => { bg.style.transform = `translateY(${Math.min(scrollY, 900) * .03}px)`; tk = false; }); } }, { passive: true });
   }
   // Open the site with ?check=1 to list any artwork file that is missing from the server
-  if (/[?&]check\b/.test(location.search)) Promise.all(["banner", "bg-blue", "bg-damask-pale", "bg-jacquard", "bg-jacquard-tile", "bg-paisley", "bookmark", "butterfly", "cartouche", "delphinium", "dove", "elephant", "env-back", "env-flowers", "env-front", "fan-batik2", "forget", "frame-flowers2", "frame-oval", "frame-ticket", "gold-flora", "gunungan", "hummer", "janur", "joglo", "key", "lace-fan", "lace-heart", "lace-navy", "lace-trim", "lamp", "lily-bouquet", "lily-pink", "lily-white", "locket", "lov", "morpho", "paper", "parasol", "rings", "roses-bg", "rosette", "seal", "seal-navy", "stamp-bird", "stamp-flower", "tag", "vinyl"].map(n => fetch("assets/art/" + n + ".webp", { method: "HEAD" }).then(r => r.ok ? null : n).catch(() => n)))
+  if (/[?&]check\b/.test(location.search)) Promise.all(["banner", "bg-blue", "bg-damask-pale", "bg-jacquard", "bg-jacquard-tile", "bg-paisley", "book-cover", "bookmark", "butterfly", "delphinium", "doily-oval", "dove", "elephant", "env-back", "env-flowers", "env-front", "env-lace-back", "env-lace-front", "env-liner", "fan-batik2", "forget", "fr-gold", "fr-lace-oval", "fr-wood", "gunungan", "hummer", "janur", "joglo", "key", "lace-heart", "lace-navy", "lace-trim", "lamp", "lily-bouquet", "lily-pink", "lily-white", "lov", "morpho", "paper", "paper-old", "parasol", "roses-bg", "rosette", "seal", "stamp-bird", "stamp-flower", "tag", "ticket", "tx-cream-floral", "vinyl"].map(n => fetch("assets/art/" + n + ".webp", { method: "HEAD" }).then(r => r.ok ? null : n).catch(() => n)))
     .then(m => { m = m.filter(Boolean); const b = h("div", { style: "position:fixed;z-index:999;left:0;right:0;top:0;padding:12px;font:14px sans-serif;color:#fff;background:" + (m.length ? "#A4513F" : "#56603F") },
       m.length ? "Missing in assets/art/: " + m.join(".webp, ") + ".webp" : "All artwork files found."); document.body.append(b); });
-  addEventListener("resize", fitGuest);
   window.WEDDING_READY = true;
 })();
